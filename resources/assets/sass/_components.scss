@@ -34,6 +34,12 @@
 
     outline: none;
   }
+
+  &:focus-within {
+    @apply border-grey;
+
+    outline: none;
+  }
 }
 
 .dropdown {
@@ -49,5 +55,15 @@
         @apply bg-indigo text-white;
       }
     }
+  }
+}
+
+.select {
+  @apply block appearance-none w-full bg-white border border-grey-light px-4 py-3 pr-8 rounded shadow;
+  &:hover {
+    @apply border-grey;
+  }
+  &:focus {
+    @apply outline-none;
   }
 }

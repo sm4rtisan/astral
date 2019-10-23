@@ -7,12 +7,11 @@
  */
 
 Route::get('auth/me', 'AuthController@me');
-Route::get('auth/refresh', 'AuthController@refresh');
 Route::get('auth/logout', 'AuthController@logout');
 Route::get('auth/revoke', 'AuthController@revokeApplicationGrant');
 Route::delete('auth/delete', 'AuthController@destroy');
 
-Route::group(['middleware' => 'jwt'], function () {
+Route::group(['middleware' => 'auth'], function () {
     Route::put('user/show-language-tags', 'UserSettingsController@setShowLanguagetags');
     Route::put('user/autosave-notes', 'UserSettingsController@setAutosaveNotes');
 
@@ -20,7 +19,7 @@ Route::group(['middleware' => 'jwt'], function () {
     Route::post('tags', 'TagsController@store');
     Route::delete('tags/{tag}', 'TagsController@destroy');
     Route::patch('tags/{tag}', 'TagsController@update');
-    Route::put('tags/reorder', 'TagSortOrderController@update');
+    Route::put('tags/reorder', 'TagsSortOrderController@update');
 
     Route::put('star/tags', 'StarTagsController@update');
     Route::post('star/tags', 'StarTagsController@store');
@@ -36,4 +35,10 @@ Route::group(['middleware' => 'jwt'], function () {
     Route::put('stars/autotag', 'AutotagController@update');
 
     Route::delete('stars/cleanup', 'StarsJanitorController@destroy');
+
+    Route::get('predicates', 'PredicatesController@index');
+    Route::post('predicates', 'PredicatesController@store');
+    Route::patch('predicates', 'PredicatesController@update');
+    Route::delete('predicates/{predicate}', 'PredicatesController@destroy');
+    Route::put('predicates/reorder', 'PredicatesSortOrderController@update');
 });

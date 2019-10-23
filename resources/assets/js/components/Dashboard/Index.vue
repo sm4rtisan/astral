@@ -7,6 +7,7 @@
     <StarInfo />
     <div><Notifier :timeout="3000" /></div>
     <SettingsModal :user="user" />
+    <PredicateModal />
   </div>
 </template>
 <script>
@@ -17,6 +18,7 @@ import StarList from '@/components/Dashboard/StarList'
 import Galileo from '@/components/Dashboard/Galileo'
 import StarInfo from '@/components/Dashboard/StarInfo'
 import SettingsModal from '@/components/Dashboard/SettingsModal'
+import PredicateModal from '@/components/Dashboard/PredicateModal'
 import Notifier from '@/components/Notifier'
 export default {
   name: 'Dashboard',
@@ -27,6 +29,7 @@ export default {
     Sidebar,
     StarList,
     SettingsModal,
+    PredicateModal,
     Notifier
   },
   computed: {
@@ -52,10 +55,10 @@ export default {
         refresh: false
       })
     }
-    if (this.user.autotag_topics) {
-      this.$bus.$emit('STATUS', 'Applying repository tags...')
-      await this.autotagStars()
-    }
+    // if (this.user.autotag_topics) {
+    //   this.$bus.$emit('STATUS', 'Applying repository tags...')
+    //   await this.autotagStars()
+    // }
     this.$bus.$emit('STATUS', 'Cleaning up...')
     await this.cleanupStars()
     this.$bus.$emit('STATUS', '')

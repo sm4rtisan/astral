@@ -1,12 +1,10 @@
 {
   "private": true,
   "scripts": {
-    "dev": "yarn run development",
-    "development": "cross-env NODE_ENV=development node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
-    "watch": "yarn run development -- --watch --watch-poll",
+    "dev": "cross-env NODE_ENV=development node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
+    "watch": "cross-env NODE_ENV=development node_modules/webpack/bin/webpack.js --progress --hide-modules --watch --watch-poll --config=node_modules/laravel-mix/setup/webpack.config.js",
     "hot": "cross-env NODE_ENV=development node_modules/webpack-dev-server/bin/webpack-dev-server.js --inline --hot --config=node_modules/laravel-mix/setup/webpack.config.js",
-    "prod": "yarn run production",
-    "production": "cross-env NODE_ENV=production node_modules/webpack/bin/webpack.js --no-progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
+    "prod": "cross-env NODE_ENV=production node_modules/webpack/bin/webpack.js --no-progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
     "test": "jest",
     "test:watch": "jest --watchAll",
     "lint": "eslint \"resources/assets/js/**\" --ext=.js --ext=.vue",
@@ -21,9 +19,6 @@
     ],
     "setupFiles": [
       "<rootDir>/resources/assets/js/__tests__/utils/mockument"
-    ],
-    "setupFilesAfterEnv": [
-      "<rootDir>/resources/assets/js/__tests__/utils/setup"
     ],
     "testPathIgnorePatterns": [
       "<rootDir>/resources/assets/js/__tests__/utils/"
@@ -56,6 +51,7 @@
     "vue-collection-cluster": "^1.0.11",
     "vue-feather-icons": "^4.5.0",
     "vue-global-events": "^1.0.2",
+    "vue-input-autowidth": "^1.0.7",
     "vue-js-modal": "^1.3.12",
     "vue-router": "^3.0.2",
     "vuex": "^3.1.0"
@@ -86,6 +82,7 @@
     "sass-loader": "^7.1.0",
     "tailwindcss": "^0.6.3",
     "vue-jest": "4.0.0-beta.2",
-    "vue-template-compiler": "^2.6.0"
+    "vue-template-compiler": "^2.6.0",
+    "vuex-mock-store": "^0.0.7"
   }
 }

@@ -1,5 +1,5 @@
 import qs from 'qs'
-import { uniqBy } from 'lodash'
+import { uniqBy, omit } from 'lodash'
 import {
   CLEAR_STARS,
   ADD_TAG_TO_STARS,
@@ -7,7 +7,6 @@ import {
   SET_CURRENT_STAR,
   SELECT_STARS,
   PUSH_TO_CURRENT_STARS,
-  SET_CURRENT_TAG,
   SET_README,
   SET_README_LOADING,
   SET_STARS_PAGE_INFO,
@@ -26,6 +25,7 @@ import {
 import client from '@/store/api/client'
 import router from '@/router'
 import galileo from '@/filters/galileo'
+import predicate from '@/filters/predicate'
 
 const state = {
   userStars: [],
@@ -42,31 +42,38 @@ const state = {
 const getters = {
   stars: state => state.stars,
   filteredStars: (state, __getters, rootState) => {
-    const stars = state.stars
-      .filter(star => {
-        if (!Object.keys(rootState.tags.currentTag).length) {
-          return true
-        } else {
-          return star.tags.map(tag => tag.name).includes(rootState.tags.currentTag.name)
-        }
-      })
-      .filter(star => {
-        if (state.currentLanguage === '') {
-          return true
-        } else {
-          return star.node.primaryLanguage && star.node.primaryLanguage.name === state.currentLanguage
-        }
-      })
-      .filter(star => {
-        if (!state.viewingUntagged) {
-          return true
-        }
-
-        return !star.tags.length
-      })
-      .map(star => {
+    let stars
+    if (Object.keys(rootState.predicates.currentPredicate).length) {
+      stars = predicate(state.stars, JSON.parse(rootState.predicates.currentPredicate.body)).map(star => {
         return { type: 'star', value: star }
       })
+    } else {
+      stars = state.stars
+        .filter(star => {
+          if (!Object.keys(rootState.tags.currentTag).length) {
+            return true
+          } else {
+            return star.tags.map(tag => tag.name).includes(rootState.tags.currentTag.name)
+          }
+        })
+        .filter(star => {
+          if (state.currentLanguage === '') {
+            return true
+          } else {
+            return star.node.primaryLanguage && star.node.primaryLanguage.name === state.currentLanguage
+          }
+        })
+        .filter(star => {
+          if (!state.viewingUntagged) {
+            return true
+          }
+
+          return !star.tags.length
+        })
+        .map(star => {
+          return { type: 'star', value: star }
+        })
+    }
 
     return galileo(stars, rootState.galileo.tokenizedSearchQuery)
   },
@@ -224,54 +231,48 @@ const actions = {
     if (refresh) {
       commit(RESET_STARS)
     }
-    return client
-      .withAuth()
-      .get(`/stars/github?${qs.stringify(cursorQs)}${qs.stringify(refreshQs)}`)
-      .then(res => {
-        commit(
-          SET_STARS,
-          res.edges.map(edge => {
-            edge.tags = []
-            edge.notes = ''
-            return edge
-          })
-        )
-        commit(SET_STARS_PAGE_INFO, res.pageInfo)
-        if (!cursor) {
-          commit(SET_TOTAL_STARS, res.totalCount)
-        }
+    return client.get(`/stars/github?${qs.stringify(cursorQs)}${qs.stringify(refreshQs)}`).then(({ data }) => {
+      commit(
+        SET_STARS,
+        data.edges.map(edge => {
+          edge.tags = []
+          edge.notes = ''
+          return edge
+        })
+      )
+      commit(SET_STARS_PAGE_INFO, data.pageInfo)
+      if (!cursor) {
+        commit(SET_TOTAL_STARS, data.totalCount)
+      }
 
-        commit(MAP_USER_STARS_TO_GITHUB_STARS)
-      })
+      commit(MAP_USER_STARS_TO_GITHUB_STARS)
+    })
   },
   fetchUserStars({ commit }) {
-    client
-      .withAuth()
-      .get('/stars')
-      .then(res => {
-        commit(SET_USER_STARS, res)
-      })
+    client.get('/stars').then(({ data }) => {
+      commit(SET_USER_STARS, data)
+    })
   },
-  setCurrentLanguage({ commit }, language) {
+  setCurrentLanguage({ commit, dispatch }, language) {
+    commit(SET_CURRENT_LANGUAGE, language)
     router.replace({
       query: {
-        ...router.currentRoute.query,
+        ...omit(router.currentRoute.query, 'predicate'),
         language: language || undefined
       }
     })
-    commit(SET_CURRENT_LANGUAGE, language)
+    if (language) {
+      dispatch('setCurrentPredicate', {})
+    }
   },
   addTagToStars({ commit }, data) {
     commit(ADD_TAG_TO_STARS, data)
 
     const { stars, tag } = data
     const starIds = stars.map(star => star.databaseId)
-    client
-      .withAuth()
-      .post('/star/tags', { starIds, tag })
-      .then(res => {
-        commit(SET_TAGS, res.tags)
-      })
+    client.post('/star/tags', { starIds, tag }).then(({ data }) => {
+      commit(SET_TAGS, data.tags)
+    })
   },
   setCurrentStar({ commit }, star) {
     commit(SET_CURRENT_STAR, star)
@@ -282,50 +283,41 @@ const actions = {
   selectStars({ commit }, stars) {
     commit(SELECT_STARS, stars)
   },
-  fetchReadme({ rootState, commit }, repoName) {
+  fetchReadme({ commit }, repoName) {
     commit(SET_README_LOADING, true)
-    const accessToken = rootState.user.user.access_token
     return client
-      .withoutAuth()
-      .get(
-        `https://api.github.com/repos/${repoName}/readme?access_token=${accessToken}`,
-        {},
-        {
-          Accept: 'application/vnd.github.v3.html'
-        }
-      )
-      .then(res => {
-        commit(SET_README, res)
+      .get(`/stars/readme?repo=${repoName}`)
+      .then(({ data }) => {
+        commit(SET_README, data)
       })
       .catch(() => {
         commit(SET_README, '')
       })
       .finally(() => commit(SET_README_LOADING, false))
   },
-  setViewingUntagged({ commit }, viewing) {
+  setViewingUntagged({ commit, dispatch }, viewing) {
     if (viewing) {
-      commit(SET_CURRENT_TAG, {})
+      dispatch('setCurrentTag', {})
+      dispatch('setCurrentPredicate', {})
     }
     commit(SET_VIEWING_UNTAGGED, viewing)
   },
   syncStarTags({ commit }, { id, tags }) {
     client
-      .withAuth()
       .put('/star/tags', {
         id,
         tags
       })
-      .then(res => {
-        commit(SET_TAGS, res.tags)
+      .then(({ data }) => {
+        commit(SET_TAGS, data.tags)
         commit(SET_STAR_TAGS, {
           starId: id,
-          tags: res.star.tags
+          tags: data.star.tags
         })
       })
   },
   editStarNotes({ commit }, { id, notes }) {
     client
-      .withAuth()
       .post('/star/notes', {
         id,
         notes
@@ -338,23 +330,17 @@ const actions = {
       })
   },
   cleanupStars({ commit }) {
-    client
-      .withAuth()
-      .delete('/stars/cleanup')
-      .then(res => {
-        commit(SET_USER_STARS, res)
-        commit(MAP_USER_STARS_TO_GITHUB_STARS)
-      })
+    client.delete('/stars/cleanup').then(({ data }) => {
+      commit(SET_USER_STARS, data)
+      commit(MAP_USER_STARS_TO_GITHUB_STARS)
+    })
   },
   autotagStars({ commit }) {
-    client
-      .withAuth()
-      .put('/stars/autotag')
-      .then(res => {
-        commit(SET_TAGS, res.tags)
-        commit(SET_USER_STARS, res.stars)
-        commit(MAP_USER_STARS_TO_GITHUB_STARS)
-      })
+    client.put('/stars/autotag').then(({ data }) => {
+      commit(SET_TAGS, data.tags)
+      commit(SET_USER_STARS, data.stars)
+      commit(MAP_USER_STARS_TO_GITHUB_STARS)
+    })
   },
   unstarStar({ commit, state, dispatch, getters }, { databaseId, nodeId }) {
     commit(UNSTAR_STAR, databaseId)
@@ -363,14 +349,11 @@ const actions = {
       dispatch('fetchReadme', getters.currentStar.node.nameWithOwner)
     }
 
-    client
-      .withAuth()
-      .delete('/stars/github/unstar', { databaseId, nodeId })
-      .then(res => {
-        commit(SET_TAGS, res.tags)
-        commit(SET_USER_STARS, res.stars)
-        commit(MAP_USER_STARS_TO_GITHUB_STARS)
-      })
+    client.delete('/stars/github/unstar', { databaseId, nodeId }).then(({ data }) => {
+      commit(SET_TAGS, data.tags)
+      commit(SET_USER_STARS, data.stars)
+      commit(MAP_USER_STARS_TO_GITHUB_STARS)
+    })
   }
 }
 

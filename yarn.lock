@@ -3033,6 +3033,11 @@ es-to-primitive@^1.2.0:
     is-date-object "^1.0.1"
     is-symbol "^1.0.2"
 
+es6-object-assign@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/es6-object-assign/-/es6-object-assign-1.1.0.tgz#c2c3582656247c39ea107cb1e6652b6f9f24523c"
+  integrity sha1-wsNYJlYkfDnqEHyx5mUrb58kUjw=
+
 es6-promise@^4.1.1:
   version "4.2.8"
   resolved "https://registry.yarnpkg.com/es6-promise/-/es6-promise-4.2.8.tgz#4eb21594c972bc40553d276e510539143db53e0a"
@@ -5364,6 +5369,11 @@ lodash-webpack-plugin@^0.11.5:
   integrity sha512-QWfEIYxpixOdbd6KBe5g6MDWcyTgP3trDXwKHFqTlXrWiLcs/67fGQ0IWeRyhWlTITQIgMpJAYd2oeIztuV5VA==
   dependencies:
     lodash "^4.17.4"
+
+lodash.clonedeep@^4.5.0:
+  version "4.5.0"
+  resolved "https://registry.yarnpkg.com/lodash.clonedeep/-/lodash.clonedeep-4.5.0.tgz#e23f3f9c4f8fbdde872529c1071857a086e5ccef"
+  integrity sha1-4j8/nE+Pvd6HJSnBBxhXoIblzO8=
 
 lodash.memoize@^4.1.2:
   version "4.1.2"
@@ -8610,6 +8620,13 @@ vue-hot-reload-api@^2.3.0:
   resolved "https://registry.yarnpkg.com/vue-hot-reload-api/-/vue-hot-reload-api-2.3.3.tgz#2756f46cb3258054c5f4723de8ae7e87302a1ccf"
   integrity sha512-KmvZVtmM26BQOMK1rwUZsrqxEGeKiYSZGA7SNWE6uExx8UX/cj9hq2MRV/wWC3Cq6AoeDGk57rL9YMFRel/q+g==
 
+vue-input-autowidth@^1.0.7:
+  version "1.0.7"
+  resolved "https://registry.yarnpkg.com/vue-input-autowidth/-/vue-input-autowidth-1.0.7.tgz#26474547a488f45494980433f02887e41d458c12"
+  integrity sha512-F/vB2mswTeLve474zAz38P9RjymK9ZrUx+6vN3TpidjfsKa/Z52SqGh9wcNZVK0Yz8IjbRFpI47WwxzbUVyAvw==
+  dependencies:
+    es6-object-assign "^1.1.0"
+
 vue-jest@4.0.0-beta.2:
   version "4.0.0-beta.2"
   resolved "https://registry.yarnpkg.com/vue-jest/-/vue-jest-4.0.0-beta.2.tgz#f2120ea9d24224aad3a100c2010b0760d47ee6fe"
@@ -8668,6 +8685,13 @@ vue@^2.5.13:
   version "2.6.10"
   resolved "https://registry.yarnpkg.com/vue/-/vue-2.6.10.tgz#a72b1a42a4d82a721ea438d1b6bf55e66195c637"
   integrity sha512-ImThpeNU9HbdZL3utgMCq0oiMzAkt1mcgy3/E6zWC/G6AaQoeuFdsl9nDhTDU3X1R6FK7nsIUuRACVcjI+A2GQ==
+
+vuex-mock-store@^0.0.7:
+  version "0.0.7"
+  resolved "https://registry.yarnpkg.com/vuex-mock-store/-/vuex-mock-store-0.0.7.tgz#b18c529bc48b23dc596fdf9e0739676ae16dd7d1"
+  integrity sha512-Hd8q/lab+U/b0o0YvGvUWbxtrFbRTxwTMp+VL8qPQ1l2wmhJOMBwb086yil5dn1i2qLiF8Y5UtgKqCMcLzShKQ==
+  dependencies:
+    lodash.clonedeep "^4.5.0"
 
 vuex@^3.1.0:
   version "3.1.1"

@@ -48,6 +48,39 @@
         </div>
       </template>
     </SidebarGroup>
+    <SidebarGroup :collapsible="true" :is-collapsed="filtersCollapsed" @toggle="toggleCollapsedState('filters')">
+      <template v-slot:header="{ toggleCollapsed }">
+        <SidebarHeader title="Smart Filters" @click.native="toggleCollapsed">
+          <button
+            class="transition-color bg-transparent p-0 w-4 h-4 text-grey-darker hover:text-grey focus-none"
+            @click.stop="$modal.show('predicate-modal')"
+          >
+            <Icon type="PlusCircleIcon" height="16" width="16" class="stroke-current fill-none" />
+          </button>
+        </SidebarHeader>
+      </template>
+      <template v-slot:content="{ isCollapsed }">
+        <ul v-show="!isCollapsed" ref="sidebarFilters" class="dashboard-list sidebar-predicates list-none m-0 p-0 pb-3">
+          <SidebarItem
+            v-for="predicate in predicates"
+            :key="predicate.id"
+            :data-id="predicate.id"
+            :title="predicate.name"
+            icon="SearchIcon"
+            :class="{ selected: currentPredicate.id === predicate.id }"
+            class="predicate rounded group"
+            @click.native="setCurrentPredicate(predicate)"
+          >
+            <button
+              class="transition-color-opacity ml-auto text-grey focus:outline-none opacity-0 hover:text-white group-hover:opacity-100 hover:text-white"
+              @click.stop="editPredicate(predicate)"
+            >
+              <Icon type="SettingsIcon" height="14" class="stroke-current fill-none relative" />
+            </button>
+          </SidebarItem>
+        </ul>
+      </template>
+    </SidebarGroup>
     <SidebarGroup :collapsible="true" :is-collapsed="languagesCollapsed" @toggle="toggleCollapsedState('languages')">
       <template v-slot:header="{ toggleCollapsed }">
         <SidebarHeader title="Languages" @click.native="toggleCollapsed" />
@@ -76,6 +109,7 @@ import SidebarHeader from '@/components/Dashboard/Sidebar/SidebarHeader'
 import SidebarItem from '@/components/Dashboard/Sidebar/SidebarItem'
 import SidebarTag from '@/components/Dashboard/Sidebar/SidebarTag'
 import TagSorter from '@/components/Dashboard/Sidebar/TagSorter'
+import Icon from '@/components/Icon'
 import { mapActions, mapGetters } from 'vuex'
 import dragula from 'dragula'
 export default {
@@ -87,7 +121,8 @@ export default {
     SidebarHeader,
     SidebarItem,
     SidebarTag,
-    TagSorter
+    TagSorter,
+    Icon
   },
   data() {
     return {
@@ -101,33 +136,28 @@ export default {
       'currentTag',
       'languages',
       'currentLanguage',
+      'predicates',
+      'currentPredicate',
       'viewingUntagged',
       'pageInfo',
       'totalStars',
       'totalUntaggedStars',
       'tagsCollapsed',
-      'languagesCollapsed'
+      'languagesCollapsed',
+      'filtersCollapsed'
     ]),
     noFiltersApplied() {
-      return !Object.keys(this.currentTag).length && this.currentLanguage === '' && !this.viewingUntagged
+      return (
+        !Object.keys(this.currentTag).length &&
+        !Object.keys(this.currentPredicate).length &&
+        this.currentLanguage === '' &&
+        !this.viewingUntagged
+      )
     }
   },
   async mounted() {
-    this.$bus.$on('TAGS_SORTED', method => {
-      this.sortTags(method)
-    })
-
-    this.drake = dragula([this.$refs.sidebarTags]).on('drop', (el, target, source) => {
-      let sortMap = Array.from(source.children).map((el, i) => {
-        return {
-          id: el.dataset.id,
-          sort_order: i
-        }
-      })
-      this.reorderTags(sortMap)
-    })
-
     await this.fetchTags()
+    await this.fetchPredicates()
 
     if (this.$route.query.tag) {
       const queryTag = this.tags.find(tag => {
@@ -141,6 +171,38 @@ export default {
     if (this.$route.query.language) {
       this.setCurrentLanguage(this.$route.query.language)
     }
+
+    if (this.$route.query.predicate) {
+      const queryPredicate = this.predicates.find(predicate => {
+        return predicate.name === this.$route.query.predicate
+      })
+
+      if (queryPredicate) {
+        this.setCurrentPredicate(queryPredicate)
+      }
+    }
+
+    this.$bus.$on('TAGS_SORTED', method => {
+      this.sortTags(method)
+    })
+
+    this.drake = dragula([this.$refs.sidebarTags, this.$refs.sidebarFilters], {
+      accepts(el, target, source) {
+        return target === source
+      }
+    }).on('drop', (el, __, source) => {
+      let sortMap = Array.from(source.children).map((el, i) => {
+        return {
+          id: el.dataset.id,
+          sort_order: i
+        }
+      })
+      if (source.classList.contains('sidebar-tags')) {
+        this.reorderTags(sortMap)
+      } else {
+        this.reorderPredicates(sortMap)
+      }
+    })
   },
   methods: {
     ...mapActions([
@@ -156,7 +218,11 @@ export default {
       'renameTag',
       'fetchGitHubStars',
       'cleanupStars',
-      'toggleCollapsedState'
+      'toggleCollapsedState',
+      'fetchPredicates',
+      'setCurrentPredicate',
+      'setEditingPredicate',
+      'reorderPredicates'
     ]),
     async refreshStars() {
       this.refreshingStars = true
@@ -193,7 +259,7 @@ export default {
       const oldName = this.tags.find(s => s.id === id).name
       try {
         await this.renameTag(data)
-        this.$bus.$emit('NOTIFICATION', `${oldName} tag renamed to ${name}!!`)
+        this.$bus.$emit('NOTIFICATION', `${oldName} tag renamed to ${name}`)
       } catch (e) {
         this.$bus.$emit('NOTIFICATION', e.errors.name[0], 'error')
       }
@@ -206,6 +272,7 @@ export default {
     resetFilters() {
       this.setViewingUntagged(false)
       this.setCurrentTag({})
+      this.setCurrentPredicate({})
       this.setCurrentLanguage('')
     },
     async tagStarWithData({ data, id }) {
@@ -225,6 +292,11 @@ export default {
           this.$bus.$emit('NOTIFICATION', 'Whoops, we could not tag those stars. Please try again.', 'error')
         }
       }
+    },
+    async editPredicate(predicate) {
+      this.setEditingPredicate(predicate)
+      await this.$nextTick()
+      this.$modal.show('predicate-modal')
     }
   }
 }

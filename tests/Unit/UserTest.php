@@ -36,7 +36,7 @@ class UserTest extends TestCase
     {
         $githubUser = new GitHubUser();
 
-        $this->user->mapGitHubUser($githubUser);
+        $this->user->mapGitHubUserData($githubUser);
 
         $this->assertEquals(
             $githubUser->getNickname(),
@@ -56,11 +56,6 @@ class UserTest extends TestCase
         $this->assertEquals(
             $githubUser->getAvatar(),
             $this->user->avatar_url
-        );
-
-        $this->assertEquals(
-            $githubUser->token,
-            $this->user->access_token
         );
     }
 
